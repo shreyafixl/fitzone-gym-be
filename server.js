@@ -113,8 +113,14 @@ app.use('/api/admin/branches', require('./routes/adminBranchRoutes'));
 // Admin Analytics (for admin panel)
 app.use('/api/admin/analytics', require('./routes/adminAnalyticsRoutes'));
 
+// Admin Members Management (for admin panel)
+app.use('/api/admin/members', require('./routes/adminMembersRoutes'));
+
 // Admin Attendance Management (for admin panel)
 app.use('/api/admin/attendance', require('./routes/adminAttendanceRoutes'));
+
+// Admin Check-ins Management (for admin panel)
+app.use('/api/admin/checkins', require('./routes/adminCheckinsRoutes'));
 
 // Admin Membership Management (for admin panel)
 app.use('/api/admin', require('./routes/adminMembershipRoutes'));
@@ -127,6 +133,21 @@ app.use('/api/admin/schedules', require('./routes/adminScheduleRoutes'));
 
 // Admin Trainer Management (for admin panel)
 app.use('/api/admin/trainers', require('./routes/adminTrainerRoutes'));
+
+// Admin Permissions Management (for admin panel)
+app.use('/api/admin/permissions', require('./routes/adminPermissionsRoutes'));
+
+// Admin Classes Management (for admin panel)
+app.use('/api/admin/classes', require('./routes/adminClassesRoutes'));
+
+// Admin Schedules Management (for admin panel - Classes section)
+app.use('/api/admin/class-schedules', require('./routes/adminSchedulesRoutes'));
+
+// Admin Bookings Management (for admin panel - Classes section)
+app.use('/api/admin/bookings', require('./routes/adminBookingsRoutes'));
+
+// Admin Categories Management (for admin panel - Classes section)
+app.use('/api/admin/categories', require('./routes/adminCategoriesRoutes'));
 
 // Admin Support Ticket Management (for admin panel)
 app.use('/api/admin/support', require('./routes/adminSupportRoutes'));
@@ -165,6 +186,7 @@ app.use('/api/trainer/dashboard', require('./routes/trainerDashboardRoutes'));
 app.use('/api/superadmin/auth', require('./routes/superadminAuthRoutes'));
 app.use('/api/superadmin/users', require('./routes/userRoutes'));
 app.use('/api/superadmin/branches', require('./routes/branchRoutes'));
+app.use('/api/superadmin/content', require('./routes/contentRoutes'));
 app.use('/api/superadmin/financial', require('./routes/financialRoutes'));
 app.use('/api/superadmin/analytics', require('./routes/analyticsRoutes'));
 app.use('/api/superadmin/communication', require('./routes/communicationRoutes'));
@@ -194,6 +216,9 @@ app.use('/api/trainers', require('./routes/trainerRoutes'));
 
 // Support Routes
 app.use('/api/support', require('./routes/supportRoutes'));
+
+// Feedback Routes
+app.use('/api/feedback', require('./routes/feedbackRoutes'));
 
 // Settings Routes
 app.use('/api/settings', require('./routes/settingsRoutes'));

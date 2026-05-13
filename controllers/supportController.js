@@ -131,6 +131,11 @@ const createTicket = asyncHandler(async (req, res) => {
     throw ApiError.badRequest('Please provide ticket title, description, and category');
   }
 
+  // Validate user is authenticated
+  if (!req.user || !req.user._id) {
+    throw ApiError.unauthorized('User not authenticated');
+  }
+
   // Get user model type
   let userModel = 'User';
   if (req.user.role === 'superadmin') {
@@ -139,6 +144,17 @@ const createTicket = asyncHandler(async (req, res) => {
     userModel = 'Trainer';
   }
 
+  // Get user name - try multiple fields
+  const userName = req.user.fullName || req.user.name || req.user.email || 'Unknown User';
+  const userEmail = req.user.email || 'unknown@example.com';
+
+  console.log('[createTicket] Creating ticket for user:', {
+    userId: req.user._id,
+    userModel,
+    userName,
+    userEmail,
+  });
+
   // Create ticket
   const ticket = await SupportTicket.create({
     ticketTitle,
@@ -146,8 +162,8 @@ const createTicket = asyncHandler(async (req, res) => {
     createdBy: {
       userId: req.user._id,
       userModel: userModel,
-      userName: req.user.fullName,
-      userEmail: req.user.email,
+      userName: userName,
+      userEmail: userEmail,
     },
     ticketCategory,
     priorityLevel: priorityLevel || 'medium',
@@ -156,6 +172,7 @@ const createTicket = asyncHandler(async (req, res) => {
     ticketStatus: 'open',
   });
 
+  console.log('[createTicket] Ticket created successfully:', ticket._id);
   ApiResponse.created(res, ticket, 'Support ticket created successfully');
 });
 

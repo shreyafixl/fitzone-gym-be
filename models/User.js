@@ -155,6 +155,32 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    permissions: {
+      canManageMembers: {
+        type: Boolean,
+        default: false,
+      },
+      canManageBilling: {
+        type: Boolean,
+        default: false,
+      },
+      canViewReports: {
+        type: Boolean,
+        default: false,
+      },
+      canManageSettings: {
+        type: Boolean,
+        default: false,
+      },
+      canManageTrainers: {
+        type: Boolean,
+        default: false,
+      },
+      canDeleteRecords: {
+        type: Boolean,
+        default: false,
+      },
+    },
   },
   {
     timestamps: true, // Automatically adds createdAt and updatedAt

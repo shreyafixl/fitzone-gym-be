@@ -98,20 +98,20 @@ const createAttendance = asyncHandler(async (req, res) => {
 });
 
 /**
- * @desc    Get all attendance records with filtering
+ * @desc    Get all attendance records with pagination and filtering
  * @route   GET /api/admin/attendance
  * @access  Private (Admin)
  */
-const getAllAttendance = asyncHandler(async (req, res) => {
+const getAttendance = asyncHandler(async (req, res) => {
   const {
     page = 1,
     limit = 10,
     memberId,
+    dateFrom,
+    dateTo,
     trainerId,
     branchId,
     attendanceStatus,
-    startDate,
-    endDate,
     sortBy = 'attendanceDate',
     order = 'desc'
   } = req.query;
@@ -135,14 +135,14 @@ const getAllAttendance = asyncHandler(async (req, res) => {
     query.attendanceStatus = attendanceStatus;
   }
 
-  // Date range filter
-  if (startDate || endDate) {
+  // Date range filter using dateFrom and dateTo
+  if (dateFrom || dateTo) {
     query.attendanceDate = {};
-    if (startDate) {
-      query.attendanceDate.$gte = new Date(startDate);
+    if (dateFrom) {
+      query.attendanceDate.$gte = new Date(dateFrom);
     }
-    if (endDate) {
-      query.attendanceDate.$lte = new Date(endDate);
+    if (dateTo) {
+      query.attendanceDate.$lte = new Date(dateTo);
     }
   }
 
@@ -170,19 +170,78 @@ const getAllAttendance = asyncHandler(async (req, res) => {
 
   // Calculate pagination info
   const totalPages = Math.ceil(totalRecords / limitNum);
-  const hasMore = pageNum < totalPages;
+
+  // Calculate statistics for the filtered records
+  const stats = await Attendance.aggregate([
+    { $match: query },
+    {
+      $group: {
+        _id: '$attendanceStatus',
+        count: { $sum: 1 }
+      }
+    }
+  ]);
+
+  const statsObj = {
+    totalCheckins: totalRecords,
+    avgDuration: 0,
+    peakHours: []
+  };
+
+  // Calculate average duration
+  const avgDurationResult = await Attendance.aggregate([
+    {
+      $match: {
+        ...query,
+        duration: { $gt: 0 }
+      }
+    },
+    {
+      $group: {
+        _id: null,
+        avgDuration: { $avg: '$duration' }
+      }
+    }
+  ]);
+
+  if (avgDurationResult.length > 0) {
+    statsObj.avgDuration = Math.round(avgDurationResult[0].avgDuration);
+  }
+
+  // Calculate peak hours
+  const peakHoursResult = await Attendance.aggregate([
+    { $match: query },
+    {
+      $project: {
+        hour: { $hour: '$checkInTime' }
+      }
+    },
+    {
+      $group: {
+        _id: '$hour',
+        count: { $sum: 1 }
+      }
+    },
+    { $sort: { count: -1 } },
+    { $limit: 5 }
+  ]);
+
+  statsObj.peakHours = peakHoursResult.map(item => ({
+    hour: item._id,
+    count: item.count
+  }));
 
   ApiResponse.success(
     res,
     {
-      attendance: attendanceRecords,
+      records: attendanceRecords,
       pagination: {
-        currentPage: pageNum,
-        totalPages,
-        totalRecords,
+        page: pageNum,
         limit: limitNum,
-        hasMore
-      }
+        total: totalRecords,
+        pages: totalPages
+      },
+      stats: statsObj
     },
     'Attendance records retrieved successfully'
   );
@@ -211,7 +270,7 @@ const updateAttendance = asyncHandler(async (req, res) => {
   // Update fields
   if (checkOutTime) {
     attendance.checkOutTime = new Date(checkOutTime);
-    
+
     // Calculate duration
     const durationMs = attendance.checkOutTime - attendance.checkInTime;
     attendance.duration = Math.floor(durationMs / (1000 * 60)); // Convert to minutes
@@ -495,6 +554,57 @@ const getAttendanceStats = asyncHandler(async (req, res) => {
 });
 
 /**
+ * @desc    Get attendance by date range
+ * @route   GET /api/admin/attendance/range
+ * @access  Private (Admin)
+ */
+const getAttendanceByDateRange = asyncHandler(async (req, res) => {
+  const { startDate, endDate } = req.query;
+
+  // Validate required parameters
+  if (!startDate || !endDate) {
+    throw ApiError.badRequest('Please provide startDate and endDate query parameters');
+  }
+
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+
+  // Validate date range
+  if (start > end) {
+    throw ApiError.badRequest('startDate must be before endDate');
+  }
+
+  // Build query
+  const query = {
+    attendanceDate: {
+      $gte: start,
+      $lte: end
+    }
+  };
+
+  // Execute query with populated references
+  const attendanceRecords = await Attendance.find(query)
+    .populate('memberId', 'fullName email phone membershipStatus')
+    .populate('trainerId', 'fullName email')
+    .populate('branchId', 'branchName branchCode city')
+    .sort({ attendanceDate: -1 })
+    .lean();
+
+  ApiResponse.success(
+    res,
+    {
+      records: attendanceRecords,
+      dateRange: {
+        startDate: start,
+        endDate: end
+      },
+      totalRecords: attendanceRecords.length
+    },
+    'Attendance records retrieved successfully'
+  );
+});
+
+/**
  * @desc    Bulk create attendance records
  * @route   POST /api/admin/attendance/bulk
  * @access  Private (Admin)
@@ -513,7 +623,7 @@ const bulkCreateAttendance = asyncHandler(async (req, res) => {
 
   for (let i = 0; i < attendanceRecords.length; i++) {
     const record = attendanceRecords[i];
-    
+
     // Check required fields
     if (!record.memberId || !record.branchId || !record.checkInTime) {
       errors.push({
@@ -665,10 +775,11 @@ const getAttendanceById = asyncHandler(async (req, res) => {
 
 module.exports = {
   createAttendance,
-  getAllAttendance,
+  getAttendance,
   updateAttendance,
   getAttendanceStats,
+  getAttendanceByDateRange,
   bulkCreateAttendance,
   deleteAttendance,
-  getAttendanceById,
+  getAttendanceById
 };

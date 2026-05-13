@@ -10,7 +10,9 @@
     "seed:users": "node scripts/createSampleUsers.js",
     "seed:branches": "node scripts/createSampleBranches.js",
     "seed:financial": "node scripts/createSampleFinancialData.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest --detectOpenHandles --forceExit",
+    "test:models": "jest tests/models.test.js --detectOpenHandles --forceExit",
+    "test:watch": "jest --watch"
   },
   "keywords": [
     "fitzone",
@@ -38,6 +40,8 @@
     "nodemailer": "^8.0.7"
   },
   "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "jest": "^30.4.2",
     "nodemon": "^3.0.2"
   }
 }

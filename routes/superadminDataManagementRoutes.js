@@ -23,9 +23,10 @@ const { authorize } = require('../middleware/roleMiddleware');
 /**
  * SuperAdmin Data Management Routes
  * All routes require SuperAdmin authentication
+ * NOTE: More specific routes must come before general routes
  */
 
-// Statistics route
+// Statistics route (must be before /:id routes)
 router.get(
   '/stats',
   protect,
@@ -33,7 +34,62 @@ router.get(
   getDataStats
 );
 
-// Backup routes
+// Import History route (must be before /import)
+router.get(
+  '/import-history',
+  protect,
+  authorize('superadmin'),
+  getImportHistory
+);
+
+// Export Options route (must be before /export)
+router.get(
+  '/export-options',
+  protect,
+  authorize('superadmin'),
+  getExportOptions
+);
+
+// Export History route (must be before /export)
+router.get(
+  '/export-history',
+  protect,
+  authorize('superadmin'),
+  getExportHistory
+);
+
+// Backup Schedule routes (must be before /backups/:id routes)
+router.get(
+  '/backup-schedule',
+  protect,
+  authorize('superadmin'),
+  getBackupSchedule
+);
+
+router.put(
+  '/backup-schedule',
+  protect,
+  authorize('superadmin'),
+  updateBackupSchedule
+);
+
+// Backup Download route (must be before /backups/:id routes)
+router.get(
+  '/backups/:id/download',
+  protect,
+  authorize('superadmin'),
+  downloadBackup
+);
+
+// Backup Restore route (must be before /backups/:id routes)
+router.post(
+  '/backups/:id/restore',
+  protect,
+  authorize('superadmin'),
+  restoreBackupById
+);
+
+// Main backup routes
 router.post(
   '/backups',
   protect,
@@ -77,61 +133,6 @@ router.post(
   protect,
   authorize('superadmin'),
   importData
-);
-
-// Import History route
-router.get(
-  '/import-history',
-  protect,
-  authorize('superadmin'),
-  getImportHistory
-);
-
-// Export Options route
-router.get(
-  '/export-options',
-  protect,
-  authorize('superadmin'),
-  getExportOptions
-);
-
-// Export History route
-router.get(
-  '/export-history',
-  protect,
-  authorize('superadmin'),
-  getExportHistory
-);
-
-// Backup Schedule routes
-router.get(
-  '/backup-schedule',
-  protect,
-  authorize('superadmin'),
-  getBackupSchedule
-);
-
-router.put(
-  '/backup-schedule',
-  protect,
-  authorize('superadmin'),
-  updateBackupSchedule
-);
-
-// Backup Download route
-router.get(
-  '/backups/:id/download',
-  protect,
-  authorize('superadmin'),
-  downloadBackup
-);
-
-// Backup Restore route
-router.post(
-  '/backups/:id/restore',
-  protect,
-  authorize('superadmin'),
-  restoreBackupById
 );
 
 // Cleanup route
