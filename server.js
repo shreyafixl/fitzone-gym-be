@@ -149,11 +149,26 @@ app.use('/api/admin/bookings', require('./routes/adminBookingsRoutes'));
 // Admin Categories Management (for admin panel - Classes section)
 app.use('/api/admin/categories', require('./routes/adminCategoriesRoutes'));
 
+// Admin Enquiries Management (for admin panel - Enquiries section)
+app.use('/api/admin/enquiries', require('./routes/adminEnquiriesRoutes'));
+
+// Admin Follow-ups Management (for admin panel - Enquiries section)
+app.use('/api/admin/follow-ups', require('./routes/adminFollowUpsRoutes'));
+
 // Admin Support Ticket Management (for admin panel)
 app.use('/api/admin/support', require('./routes/adminSupportRoutes'));
 
 // Admin Communication System (for admin panel)
 app.use('/api/admin/communication', require('./routes/adminCommunicationRoutes'));
+
+// Admin Reports Module (Revenue, Attendance, Performance) - MUST come before Engagement
+app.use('/api/admin', require('./routes/adminReportsRoutes'));
+
+// Admin Engagement Module (Notifications, Announcements, Communication)
+app.use('/api/admin', require('./routes/adminEngagementRoutes'));
+
+// Admin Settings Management (for admin panel)
+app.use('/api/admin/settings', require('./routes/adminSettingsRoutes'));
 
 // Trainer Authentication (for trainer dashboard)
 app.use('/api/trainer/auth', require('./routes/trainerAuthRoutes'));

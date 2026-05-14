@@ -1,0 +1,306 @@
+{
+  "info": {
+    "name": "FitZone - User Management API",
+    "description": "User Management endpoints for FitZone Super Admin Dashboard",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "trainerId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "User Management",
+      "item": [
+        {
+          "name": "Get All Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/superadmin/users?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "superadmin", "users"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "role",
+                  "value": "member",
+                  "disabled": true
+                },
+                {
+                  "key": "membershipStatus",
+                  "value": "active",
+                  "disabled": true
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get User Statistics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/superadmin/users/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "superadmin", "users", "stats"]
+            }
+          }
+        },
+        {
+          "name": "Get Single User",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/superadmin/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "superadmin", "users", "{{userId}}"]
+            }
+          }
+        },
+        {
+          "name": "Create User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('userId', jsonData.data.user.id);",
+                  "    console.log('User ID saved:', jsonData.data.user.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Test User\",\n  \"email\": \"testuser@example.com\",\n  \"password\": \"TestPass@123\",\n  \"phone\": \"9876543290\",\n  \"gender\": \"male\",\n  \"age\": 25,\n  \"membershipPlan\": \"monthly\",\n  \"membershipStatus\": \"active\",\n  \"membershipStartDate\": \"2026-05-01\",\n  \"membershipEndDate\": \"2026-06-01\",\n  \"role\": \"member\",\n  \"address\": \"Test Address, Mumbai\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/superadmin/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "superadmin", "users"]
+            }
+          }
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Test User Updated\",\n  \"phone\": \"9876543299\",\n  \"age\": 26,\n  \"address\": \"Updated Address, Mumbai\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/superadmin/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "superadmin", "users", "{{userId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/superadmin/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "superadmin", "users", "{{userId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Membership Management",
+      "item": [
+        {
+          "name": "Update Membership Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"membershipStatus\": \"active\",\n  \"membershipStartDate\": \"2026-05-01\",\n  \"membershipEndDate\": \"2027-05-01\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/superadmin/users/{{userId}}/membership-status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "superadmin", "users", "{{userId}}", "membership-status"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Trainer Management",
+      "item": [
+        {
+          "name": "Assign Trainer",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"trainerId\": \"{{trainerId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/superadmin/users/{{userId}}/assign-trainer",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "superadmin", "users", "{{userId}}", "assign-trainer"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Attendance Management",
+      "item": [
+        {
+          "name": "Add Attendance",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"checkIn\": \"2026-05-07T06:00:00.000Z\",\n  \"checkOut\": \"2026-05-07T08:00:00.000Z\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/superadmin/users/{{userId}}/attendance",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "superadmin", "users", "{{userId}}", "attendance"]
+            }
+          }
+        },
+        {
+          "name": "Get User Attendance",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/superadmin/users/{{userId}}/attendance?limit=30",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "superadmin", "users", "{{userId}}", "attendance"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "30"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

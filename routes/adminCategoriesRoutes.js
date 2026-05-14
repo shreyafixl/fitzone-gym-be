@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const adminCategoriesController = require('../controllers/adminCategoriesController');
-const { adminAuthMiddleware } = require('../middleware/authMiddleware');
+const { protect } = require('../middleware/authMiddleware');
 
-// Apply admin auth middleware to all routes
-router.use(adminAuthMiddleware);
+// Apply auth middleware to all routes
+router.use(protect);
 
 // Category routes
 router.get('/', adminCategoriesController.getAllCategories);

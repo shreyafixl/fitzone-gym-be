@@ -1,0 +1,733 @@
+{
+  "info": {
+    "name": "FitZone - Communication Module",
+    "description": "Complete API collection for testing the Engagement & Communication Module",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "notificationId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "announcementId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "messageId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login Super Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('token', response.data.token);",
+                  "    console.log('Token saved:', response.data.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"superadmin@fitzone.com\",\n  \"password\": \"your_password\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/superadmin/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "superadmin", "auth", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "Get All Notifications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/superadmin/communication/notifications?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "superadmin", "communication", "notifications"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "type",
+                  "value": "info",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "sent",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Single Notification",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/superadmin/communication/notifications/{{notificationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "superadmin", "communication", "notifications", "{{notificationId}}"]
+            }
+          }
+        },
+        {
+          "name": "Create Notification - All Users",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('notificationId', response.data.notification.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"System Update\",\n  \"message\": \"New features are now available!\",\n  \"type\": \"info\",\n  \"recipientType\": \"all\",\n  \"priority\": \"medium\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/superadmin/communication/notifications",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "superadmin", "communication", "notifications"]
+            }
+          }
+        },
+        {
+          "name": "Create Notification - Specific Users",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Membership Expiring Soon\",\n  \"message\": \"Your membership expires in 7 days. Please renew.\",\n  \"type\": \"warning\",\n  \"recipientType\": \"specific\",\n  \"recipientIds\": [\"{{userId}}\"],\n  \"priority\": \"high\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/superadmin/communication/notifications",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "superadmin", "communication", "notifications"]
+            }
+          }
+        },
+        {
+          "name": "Create Notification - Trainers Only",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Trainer Meeting\",\n  \"message\": \"Mandatory training session this Friday at 3 PM\",\n  \"type\": \"info\",\n  \"recipientType\": \"trainers\",\n  \"priority\": \"high\",\n  \"actionUrl\": \"/calendar/event/123\",\n  \"actionLabel\": \"Add to Calendar\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/superadmin/communication/notifications",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "superadmin", "communication", "notifications"]
+            }
+          }
+        },
+        {
+          "name": "Update Notification",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated Title\",\n  \"message\": \"Updated message content\",\n  \"priority\": \"high\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/superadmin/communication/notifications/{{notificationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "superadmin", "communication", "notifications", "{{notificationId}}"]
+            }
+          }
+        },
+        {
+          "name": "Mark Notification as Read",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/superadmin/communication/notifications/{{notificationId}}/read",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "superadmin", "communication", "notifications", "{{notificationId}}", "read"]
+            }
+          }
+        },
+        {
+          "name": "Delete Notification",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/superadmin/communication/notifications/{{notificationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "superadmin", "communication", "notifications", "{{notificationId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Announcements",
+      "item": [
+        {
+          "name": "Get All Announcements",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/superadmin/communication/announcements?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "superadmin", "communication", "announcements"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "status",
+                  "value": "published",
+                  "disabled": true
+                },
+                {
+                  "key": "category",
+                  "value": "event",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Single Announcement",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/superadmin/communication/announcements/{{announcementId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "superadmin", "communication", "announcements", "{{announcementId}}"]
+            }
+          }
+        },
+        {
+          "name": "Create Announcement - Draft",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('announcementId', response.data.announcement.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Summer Fitness Challenge\",\n  \"description\": \"Join our 30-day fitness challenge starting June 1st! Win amazing prizes and achieve your fitness goals.\",\n  \"targetAudience\": \"all\",\n  \"publishDate\": \"2026-06-01T00:00:00.000Z\",\n  \"expiryDate\": \"2026-06-30T23:59:59.000Z\",\n  \"priority\": \"high\",\n  \"category\": \"event\",\n  \"isPinned\": false,\n  \"tags\": [\"fitness\", \"challenge\", \"summer\"],\n  \"status\": \"draft\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/superadmin/communication/announcements",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "superadmin", "communication", "announcements"]
+            }
+          }
+        },
+        {
+          "name": "Create Announcement - Published",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"New Equipment Arrival\",\n  \"description\": \"We've added state-of-the-art cardio machines to all branches. Come check them out!\",\n  \"targetAudience\": \"all\",\n  \"publishDate\": \"2026-05-10T00:00:00.000Z\",\n  \"priority\": \"medium\",\n  \"category\": \"general\",\n  \"isPinned\": true,\n  \"tags\": [\"equipment\", \"cardio\"],\n  \"status\": \"published\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/superadmin/communication/announcements",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "superadmin", "communication", "announcements"]
+            }
+          }
+        },
+        {
+          "name": "Update Announcement",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated Title\",\n  \"description\": \"Updated description\",\n  \"priority\": \"high\",\n  \"isPinned\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/superadmin/communication/announcements/{{announcementId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "superadmin", "communication", "announcements", "{{announcementId}}"]
+            }
+          }
+        },
+        {
+          "name": "Publish Announcement",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/superadmin/communication/announcements/{{announcementId}}/publish",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "superadmin", "communication", "announcements", "{{announcementId}}", "publish"]
+            }
+          }
+        },
+        {
+          "name": "Archive Announcement",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/superadmin/communication/announcements/{{announcementId}}/archive",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "superadmin", "communication", "announcements", "{{announcementId}}", "archive"]
+            }
+          }
+        },
+        {
+          "name": "Delete Announcement",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/superadmin/communication/announcements/{{announcementId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "superadmin", "communication", "announcements", "{{announcementId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Messages",
+      "item": [
+        {
+          "name": "Get All Messages",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/superadmin/communication/messages?page=1&limit=10&type=all",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "superadmin", "communication", "messages"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "type",
+                  "value": "all"
+                },
+                {
+                  "key": "readStatus",
+                  "value": "false",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Inbox",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/superadmin/communication/messages?type=inbox",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "superadmin", "communication", "messages"],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "inbox"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Sent Messages",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/superadmin/communication/messages?type=sent",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "superadmin", "communication", "messages"],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "sent"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Single Message",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/superadmin/communication/messages/{{messageId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "superadmin", "communication", "messages", "{{messageId}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Conversation",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/superadmin/communication/messages/conversation/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "superadmin", "communication", "messages", "conversation", "{{userId}}"]
+            }
+          }
+        },
+        {
+          "name": "Send Message",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('messageId', response.data.message.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"receiverId\": \"{{userId}}\",\n  \"subject\": \"Welcome to FitZone\",\n  \"message\": \"Thank you for joining! We're excited to help you achieve your fitness goals.\",\n  \"messageType\": \"text\",\n  \"priority\": \"normal\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/superadmin/communication/messages",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "superadmin", "communication", "messages"]
+            }
+          }
+        },
+        {
+          "name": "Send Message with Attachment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"receiverId\": \"{{userId}}\",\n  \"subject\": \"Membership Renewal\",\n  \"message\": \"Please review the attached renewal form.\",\n  \"messageType\": \"notification\",\n  \"priority\": \"high\",\n  \"attachments\": [\n    {\n      \"fileName\": \"renewal_form.pdf\",\n      \"fileUrl\": \"https://example.com/files/renewal.pdf\",\n      \"fileType\": \"application/pdf\",\n      \"fileSize\": 245678\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/superadmin/communication/messages",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "superadmin", "communication", "messages"]
+            }
+          }
+        },
+        {
+          "name": "Mark Message as Read",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/superadmin/communication/messages/{{messageId}}/read",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "superadmin", "communication", "messages", "{{messageId}}", "read"]
+            }
+          }
+        },
+        {
+          "name": "Delete Message",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/superadmin/communication/messages/{{messageId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "superadmin", "communication", "messages", "{{messageId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Statistics",
+      "item": [
+        {
+          "name": "Get Communication Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/superadmin/communication/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "superadmin", "communication", "stats"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
