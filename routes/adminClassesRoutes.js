@@ -3,7 +3,7 @@ const router = express.Router();
 const adminClassesController = require('../controllers/adminClassesController');
 const { protect } = require('../middleware/authMiddleware');
 
-// Apply auth middleware to all routes
+// Apply authentication to all routes
 router.use(protect);
 
 // Class routes

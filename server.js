@@ -170,6 +170,18 @@ app.use('/api/admin', require('./routes/adminEngagementRoutes'));
 // Admin Settings Management (for admin panel)
 app.use('/api/admin/settings', require('./routes/adminSettingsRoutes'));
 
+// Admin Equipment Management (for admin panel - Operations section)
+app.use('/api/admin/equipment', require('./routes/adminEquipmentRoutes'));
+
+// Admin Maintenance Management (for admin panel - Operations section)
+app.use('/api/admin/maintenance', require('./routes/adminMaintenanceRoutes'));
+
+// Admin Coupons Management (for admin panel - Offers section)
+app.use('/api/admin/coupons', require('./routes/adminCouponRoutes'));
+
+// Admin Discounts Management (for admin panel - Offers section)
+app.use('/api/admin/discounts', require('./routes/adminDiscountRoutes'));
+
 // Trainer Authentication (for trainer dashboard)
 app.use('/api/trainer/auth', require('./routes/trainerAuthRoutes'));
 

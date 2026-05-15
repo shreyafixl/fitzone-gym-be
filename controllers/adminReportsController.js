@@ -410,14 +410,15 @@ exports.getPerformanceReport = asyncHandler(async (req, res) => {
   const totalMembers = await User.countDocuments({ role: 'member' });
 
   const topTrainers = await Trainer.find()
-    .sort({ rating: -1 })
+    .sort({ 'rating.average': -1 })
     .limit(5)
     .select('fullName email rating specialization');
 
   const topClasses = await Class.find()
-    .sort({ enrolledMembers: -1 })
+    .sort({ createdAt: -1 })
     .limit(5)
-    .select('name category enrolledMembers capacity');
+    .select('className category capacity trainer difficultyLevel')
+    .populate('trainer', 'fullName email');
 
   res.status(200).json({
     success: true,
@@ -462,10 +463,12 @@ exports.getClassPerformance = asyncHandler(async (req, res) => {
 
   const total = await Class.countDocuments();
   const classes = await Class.find()
-    .sort({ enrolledMembers: -1 })
+    .sort({ createdAt: -1 })
     .skip(skip)
     .limit(parseInt(limit))
-    .select('name category enrolledMembers capacity trainer');
+    .select('className category capacity trainer difficultyLevel price')
+    .populate('category', 'name')
+    .populate('trainer', 'fullName email');
 
   res.status(200).json({
     success: true,

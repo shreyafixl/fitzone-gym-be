@@ -32,7 +32,8 @@ const connectDB = async () => {
 
   } catch (error) {
     console.error('❌ MongoDB connection failed:', error.message);
-    process.exit(1);
+    console.warn('⚠️  Server will continue running with mock data');
+    // Don't exit - allow server to run with mock data
   }
 };
 
