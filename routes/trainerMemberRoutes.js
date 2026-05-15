@@ -10,6 +10,9 @@ const {
   getMemberWorkouts,
   searchMembers,
   getMembersStats,
+  addProgressNote,
+  getAvailableMembers,
+  assignMemberToTrainer,
 } = require('../controllers/trainerMemberController');
 const { protectTrainer } = require('../middleware/trainerAuthMiddleware');
 
@@ -20,6 +23,14 @@ const { protectTrainer } = require('../middleware/trainerAuthMiddleware');
  * @query   page, limit, sortBy, sortOrder, search, membershipStatus, fitnessGoal, gender, isActive
  */
 router.get('/', protectTrainer, getAssignedMembers);
+
+/**
+ * @route   GET /api/trainer/members/available
+ * @desc    Get available members (not assigned to trainer)
+ * @access  Private (Trainer)
+ * @query   page, limit, search
+ */
+router.get('/available', protectTrainer, getAvailableMembers);
 
 /**
  * @route   GET /api/trainer/members/search
@@ -79,5 +90,20 @@ router.get('/:id/progress', protectTrainer, getMemberProgress);
  * @query   page, limit, status
  */
 router.get('/:id/workouts', protectTrainer, getMemberWorkouts);
+
+/**
+ * @route   POST /api/trainer/members/:id/notes
+ * @desc    Add a progress note for a member
+ * @access  Private (Trainer)
+ * @body    { note: String, bodyMeasurements?: Object, strengthMetrics?: Array, mood?: String, energyLevel?: Number, sleepQuality?: String, dietAdherence?: Number, workoutAdherence?: Number }
+ */
+router.post('/:id/notes', protectTrainer, addProgressNote);
+
+/**
+ * @route   POST /api/trainer/members/:id/assign
+ * @desc    Assign a member to trainer
+ * @access  Private (Trainer)
+ */
+router.post('/:id/assign', protectTrainer, assignMemberToTrainer);
 
 module.exports = router;

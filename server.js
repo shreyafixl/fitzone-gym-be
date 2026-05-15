@@ -75,6 +75,7 @@ app.get('/api', (req, res) => {
       trainerSchedule: '/api/trainer/schedule',
       trainerNotifications: '/api/trainer/notifications',
       trainerDashboard: '/api/trainer/dashboard',
+      trainerSettings: '/api/trainer/settings',
       superAdminAuth: '/api/superadmin/auth',
       users: '/api/superadmin/users',
       branches: '/api/superadmin/branches',
@@ -158,8 +159,14 @@ app.use('/api/trainer/schedule', require('./routes/trainerScheduleRoutes'));
 // Trainer Notifications (for trainer dashboard)
 app.use('/api/trainer/notifications', require('./routes/trainerNotificationRoutes'));
 
+// Trainer Communication - Messages & Announcements (for trainer dashboard)
+app.use('/api/trainer/communication', require('./routes/trainerCommunicationRoutes'));
+
 // Trainer Dashboard Analytics (for trainer dashboard)
 app.use('/api/trainer/dashboard', require('./routes/trainerDashboardRoutes'));
+
+// Trainer Settings (for trainer dashboard)
+app.use('/api/trainer/settings', require('./routes/trainerSettingsRoutes'));
 
 // Super Admin Routes
 app.use('/api/superadmin/auth', require('./routes/superadminAuthRoutes'));

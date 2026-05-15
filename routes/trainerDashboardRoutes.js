@@ -9,6 +9,7 @@ const {
   getDietAnalytics,
   getProgressAnalytics,
   getPerformanceStats,
+  getRatings,
 } = require('../controllers/trainerDashboardController');
 const { protectTrainer } = require('../middleware/trainerAuthMiddleware');
 
@@ -67,5 +68,12 @@ router.get('/progress', protectTrainer, getProgressAnalytics);
  * @access  Private (Trainer)
  */
 router.get('/performance', protectTrainer, getPerformanceStats);
+
+/**
+ * @route   GET /api/trainer/dashboard/ratings
+ * @desc    Get trainer ratings and reviews
+ * @access  Private (Trainer)
+ */
+router.get('/ratings', protectTrainer, getRatings);
 
 module.exports = router;

@@ -35,6 +35,12 @@ const getDashboardOverview = asyncHandler(async (req, res) => {
   // Total assigned members
   const totalMembers = assignedMemberIds.length;
 
+  // Get active members (with active membership status)
+  const activeMembers = await User.countDocuments({
+    _id: { $in: assignedMemberIds },
+    membershipStatus: 'active',
+  });
+
   // Get today's date range
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -84,6 +90,15 @@ const getDashboardOverview = asyncHandler(async (req, res) => {
     sessionStatus: 'completed',
   });
 
+  // Today's revenue (from completed sessions today)
+  const todayRevenueSessions = await Session.find({
+    trainerId,
+    sessionDate: { $gte: today, $lt: tomorrow },
+    sessionStatus: 'completed',
+  });
+
+  const todayRevenue = todayRevenueSessions.reduce((sum, session) => sum + (session.price || 0), 0);
+
   // Recent progress updates (last 7 days)
   const sevenDaysAgo = new Date(today);
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
@@ -93,6 +108,135 @@ const getDashboardOverview = asyncHandler(async (req, res) => {
     recordDate: { $gte: sevenDaysAgo },
   });
 
+  // Get today's schedule (sessions for today)
+  const todaySchedule = await Session.find({
+    trainerId,
+    sessionDate: { $gte: today, $lt: tomorrow },
+  })
+    .populate('participants.memberId', 'fullName')
+    .select('sessionDate sessionType duration sessionStatus participants price')
+    .sort({ sessionDate: 1 })
+    .limit(10);
+
+  // Format today's schedule
+  const formattedTodaySchedule = todaySchedule.map((session) => {
+    const participant = session.participants[0]; // Get first participant
+    return {
+      id: session._id,
+      time: new Date(session.sessionDate).toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+      }),
+      clientName: participant?.memberId?.fullName || 'Unknown',
+      type: session.sessionType || 'Session',
+      duration: `${session.duration || 60} min`,
+      status: session.sessionStatus || 'scheduled',
+    };
+  });
+
+  // Get active clients preview (first 4 active members)
+  const activeClientsPreview = await User.find({
+    _id: { $in: assignedMemberIds },
+    membershipStatus: 'active',
+  })
+    .select('fullName profileImage membershipPlan')
+    .limit(4);
+
+  // Format active clients preview with progress data
+  const formattedActiveClientsPreview = await Promise.all(
+    activeClientsPreview.map(async (client) => {
+      // Get latest progress for this client
+      const latestProgress = await Progress.findOne({
+        memberId: client._id,
+        trainerId,
+      }).sort({ recordDate: -1 });
+
+      // Calculate progress percentage based on goals
+      let progress = 0;
+      if (latestProgress && latestProgress.goals) {
+        const goals = latestProgress.goals;
+        const measurements = latestProgress.bodyMeasurements;
+
+        // Simple progress calculation based on weight goal
+        if (goals.targetWeight && measurements.weight) {
+          const initialWeight = measurements.weight; // This is simplified; ideally track initial weight
+          const targetWeight = goals.targetWeight;
+          const currentWeight = measurements.weight;
+
+          // Calculate progress as percentage towards goal
+          if (initialWeight > targetWeight) {
+            progress = Math.min(
+              100,
+              Math.max(0, ((initialWeight - currentWeight) / (initialWeight - targetWeight)) * 100)
+            );
+          } else if (initialWeight < targetWeight) {
+            progress = Math.min(
+              100,
+              Math.max(0, ((currentWeight - initialWeight) / (targetWeight - initialWeight)) * 100)
+            );
+          }
+        }
+      }
+
+      return {
+        _id: client._id,
+        id: client._id,
+        name: client.fullName,
+        photo: client.profileImage || 'https://via.placeholder.com/80',
+        plan: client.membershipPlan || 'Standard',
+        membershipPlan: client.membershipPlan || 'Standard',
+        progress: Math.round(progress),
+      };
+    })
+  );
+
+  // Get monthly revenue data (last 12 months)
+  const monthlyRevenueData = [];
+  for (let i = 11; i >= 0; i--) {
+    const monthStart = new Date(today.getFullYear(), today.getMonth() - i, 1);
+    const monthEnd = new Date(today.getFullYear(), today.getMonth() - i + 1, 1);
+
+    const monthRevenue = await Session.aggregate([
+      {
+        $match: {
+          trainerId: trainer._id,
+          sessionDate: { $gte: monthStart, $lt: monthEnd },
+          sessionStatus: 'completed',
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: '$price' },
+        },
+      },
+    ]);
+
+    monthlyRevenueData.push(monthRevenue[0]?.total || 0);
+  }
+
+  // Get pending tasks (placeholder - can be extended with actual task model)
+  const pendingTasks = [
+    {
+      id: 1,
+      task: 'Review member progress reports',
+      priority: 'high',
+      done: false,
+    },
+    {
+      id: 2,
+      task: 'Update workout plans',
+      priority: 'medium',
+      done: false,
+    },
+    {
+      id: 3,
+      task: 'Schedule client consultations',
+      priority: 'medium',
+      done: false,
+    },
+  ];
+
   const overview = {
     trainer: {
       id: trainer._id,
@@ -100,12 +244,13 @@ const getDashboardOverview = asyncHandler(async (req, res) => {
       email: trainer.email,
       specialization: trainer.specialization,
       experience: trainer.experience,
-      rating: trainer.rating,
+      rating: trainer.rating?.average || 0,
       assignedBranch: trainer.assignedBranch,
       trainerStatus: trainer.trainerStatus,
     },
     statistics: {
       totalMembers,
+      activeMembers,
       todaySessions,
       upcomingSessions,
       activeWorkouts,
@@ -113,7 +258,12 @@ const getDashboardOverview = asyncHandler(async (req, res) => {
       monthlyAttendance,
       completedSessions,
       recentProgressUpdates,
+      todayRevenue,
     },
+    todaySchedule: formattedTodaySchedule,
+    activeClientsPreview: formattedActiveClientsPreview,
+    monthlyRevenue: monthlyRevenueData,
+    pendingTasks,
   };
 
   ApiResponse.success(
@@ -520,6 +670,64 @@ const getPerformanceStats = asyncHandler(async (req, res) => {
   );
 });
 
+/**
+ * @desc    Get trainer ratings and reviews
+ * @route   GET /api/trainer/dashboard/ratings
+ * @access  Private (Trainer)
+ */
+const getRatings = asyncHandler(async (req, res) => {
+  const trainerId = req.user.id;
+
+  // Get trainer
+  const trainer = await Trainer.findById(trainerId);
+  if (!trainer) {
+    throw ApiError.notFound('Trainer not found');
+  }
+
+  // Get all sessions with ratings
+  const sessions = await Session.find({ trainerId })
+    .populate('memberId', 'fullName profileImage')
+    .select('sessionDate sessionType rating feedback')
+    .sort({ sessionDate: -1 })
+    .limit(50);
+
+  // Filter sessions with ratings
+  const ratedSessions = sessions.filter((s) => s.rating && s.rating > 0);
+
+  // Calculate rating statistics
+  const ratingStats = {
+    averageRating: trainer.rating || 0,
+    totalRatings: ratedSessions.length,
+    ratingDistribution: {
+      5: ratedSessions.filter((s) => s.rating === 5).length,
+      4: ratedSessions.filter((s) => s.rating === 4).length,
+      3: ratedSessions.filter((s) => s.rating === 3).length,
+      2: ratedSessions.filter((s) => s.rating === 2).length,
+      1: ratedSessions.filter((s) => s.rating === 1).length,
+    },
+  };
+
+  // Get recent reviews
+  const recentReviews = ratedSessions.map((s) => ({
+    id: s._id,
+    memberName: s.memberId?.fullName || 'Anonymous',
+    memberImage: s.memberId?.profileImage || null,
+    rating: s.rating,
+    feedback: s.feedback || 'No feedback provided',
+    date: s.sessionDate,
+    sessionType: s.sessionType,
+  }));
+
+  ApiResponse.success(
+    res,
+    {
+      ratingStats,
+      recentReviews,
+    },
+    'Trainer ratings retrieved successfully'
+  );
+});
+
 module.exports = {
   getDashboardOverview,
   getMemberAnalytics,
@@ -529,4 +737,5 @@ module.exports = {
   getDietAnalytics,
   getProgressAnalytics,
   getPerformanceStats,
+  getRatings,
 };

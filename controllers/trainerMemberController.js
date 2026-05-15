@@ -3,6 +3,7 @@ const Trainer = require('../models/Trainer');
 const Membership = require('../models/Membership');
 const Attendance = require('../models/Attendance');
 const WorkoutPlan = require('../models/WorkoutPlan');
+const Progress = require('../models/Progress');
 const ApiError = require('../utils/ApiError');
 const ApiResponse = require('../utils/ApiResponse');
 const asyncHandler = require('../utils/asyncHandler');
@@ -600,6 +601,193 @@ const getMembersStats = asyncHandler(async (req, res) => {
   );
 });
 
+/**
+ * @desc    Add a progress note for a member
+ * @route   POST /api/trainer/members/:id/notes
+ * @access  Private (Trainer)
+ * @body    { note: String, bodyMeasurements?: Object, strengthMetrics?: Array, mood?: String, energyLevel?: Number, sleepQuality?: String, dietAdherence?: Number, workoutAdherence?: Number }
+ */
+const addProgressNote = asyncHandler(async (req, res) => {
+  const trainerId = req.user.id;
+  const memberId = req.params.id;
+  const { note, bodyMeasurements, strengthMetrics, mood, energyLevel, sleepQuality, dietAdherence, workoutAdherence } = req.body;
+
+  // Validate required fields
+  if (!note || note.trim().length === 0) {
+    throw ApiError.badRequest('Progress note cannot be empty');
+  }
+
+  // Verify trainer is assigned to this member
+  const trainer = await Trainer.findById(trainerId);
+
+  if (!trainer) {
+    throw ApiError.notFound('Trainer not found');
+  }
+
+  const isAssigned = trainer.assignedMembers.some(
+    (m) => m.memberId.toString() === memberId && m.status === 'active'
+  );
+
+  if (!isAssigned) {
+    throw ApiError.forbidden('You are not assigned to this member');
+  }
+
+  // Verify member exists
+  const member = await User.findById(memberId);
+
+  if (!member) {
+    throw ApiError.notFound('Member not found');
+  }
+
+  // Create progress note entry
+  const progressNote = await Progress.create({
+    memberId,
+    trainerId,
+    recordDate: new Date(),
+    notes: note.trim(),
+    bodyMeasurements: bodyMeasurements || undefined,
+    strengthMetrics: strengthMetrics || [],
+    mood: mood || null,
+    energyLevel: energyLevel || null,
+    sleepQuality: sleepQuality || null,
+    dietAdherence: dietAdherence || null,
+    workoutAdherence: workoutAdherence || null,
+    createdBy: trainerId,
+    createdByModel: 'Trainer',
+  });
+
+  // Populate trainer details for response
+  await progressNote.populate('trainerId', 'fullName email specialization');
+
+  ApiResponse.created(
+    res,
+    { progressNote: progressNote.getPublicProfile() },
+    'Progress note added successfully'
+  );
+});
+
+/**
+ * @desc    Get available members (not assigned to trainer)
+ * @route   GET /api/trainer/members/available
+ * @access  Private (Trainer)
+ */
+const getAvailableMembers = asyncHandler(async (req, res) => {
+  const trainerId = req.user.id;
+
+  // Pagination
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  // Search
+  const search = req.query.search || '';
+
+  // Get trainer to access assigned members
+  const trainer = await Trainer.findById(trainerId);
+
+  if (!trainer) {
+    throw ApiError.notFound('Trainer not found');
+  }
+
+  // Get active assigned member IDs
+  const assignedMemberIds = trainer.assignedMembers
+    .filter((m) => m.status === 'active')
+    .map((m) => m.memberId);
+
+  // Build query for available members (not assigned)
+  const query = {
+    _id: { $nin: assignedMemberIds },
+    role: 'member',
+    isActive: true,
+  };
+
+  // Add search functionality
+  if (search) {
+    query.$or = [
+      { fullName: { $regex: search, $options: 'i' } },
+      { email: { $regex: search, $options: 'i' } },
+      { phone: { $regex: search, $options: 'i' } },
+    ];
+  }
+
+  // Get available members with pagination
+  const members = await User.find(query)
+    .select('fullName email phone gender age fitnessGoal membershipStatus membershipPlan profileImage')
+    .sort({ fullName: 1 })
+    .skip(skip)
+    .limit(limit);
+
+  // Get total count
+  const totalMembers = await User.countDocuments(query);
+
+  // Calculate pagination info
+  const totalPages = Math.ceil(totalMembers / limit);
+  const hasMore = page < totalPages;
+
+  ApiResponse.success(
+    res,
+    {
+      members,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalMembers,
+        limit,
+        hasMore,
+      },
+    },
+    'Available members retrieved successfully'
+  );
+});
+
+/**
+ * @desc    Assign a member to trainer
+ * @route   POST /api/trainer/members/:id/assign
+ * @access  Private (Trainer)
+ */
+const assignMemberToTrainer = asyncHandler(async (req, res) => {
+  const trainerId = req.user.id;
+  const memberId = req.params.id;
+
+  // Verify trainer exists
+  const trainer = await Trainer.findById(trainerId);
+
+  if (!trainer) {
+    throw ApiError.notFound('Trainer not found');
+  }
+
+  // Verify member exists
+  const member = await User.findById(memberId);
+
+  if (!member) {
+    throw ApiError.notFound('Member not found');
+  }
+
+  // Check if member is already assigned
+  const isAlreadyAssigned = trainer.assignedMembers.some(
+    (m) => m.memberId.toString() === memberId && m.status === 'active'
+  );
+
+  if (isAlreadyAssigned) {
+    throw ApiError.badRequest('Member is already assigned to this trainer');
+  }
+
+  // Add member to trainer's assigned members
+  trainer.assignedMembers.push({
+    memberId,
+    status: 'active',
+    assignedDate: new Date(),
+  });
+
+  await trainer.save();
+
+  ApiResponse.success(
+    res,
+    { trainer: trainer.getPublicProfile() },
+    'Member assigned to trainer successfully'
+  );
+});
+
 module.exports = {
   getAssignedMembers,
   getMemberById,
@@ -610,4 +798,7 @@ module.exports = {
   getMemberWorkouts,
   searchMembers,
   getMembersStats,
+  addProgressNote,
+  getAvailableMembers,
+  assignMemberToTrainer,
 };
